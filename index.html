@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperPOS - Point of Sale System</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="light-theme">
+
+    <!-- Auth Guard Layer -->
+    <div id="login-overlay" class="overlay active">
+        <div class="login-box glass-panel">
+            <div class="logo">
+                <i class="fa-solid fa-store"></i> SuperPOS
+            </div>
+            <h2>Welcome Back</h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" required placeholder="admin@pos.com" value="admin@pos.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••" value="admin123">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Login to System</button>
+            </form>
+            <div id="login-error" class="error-text"></div>
+            <button id="setup-btn" class="btn btn-outline w-100 mt-3" style="font-size: 0.8rem;">Run Initial Setup (Create Admin)</button>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel">
+            <div class="logo">
+                <i class="fa-solid fa-store"></i> <span class="nav-text">SuperPOS</span>
+            </div>
+            <ul class="nav-links">
+                <li data-view="pos" class="active"><i class="fa-solid fa-cash-register"></i> <span class="nav-text">Cashier (POS)</span></li>
+                <li data-view="dashboard"><i class="fa-solid fa-chart-pie"></i> <span class="nav-text">Dashboard</span></li>
+                <li data-view="products"><i class="fa-solid fa-box"></i> <span class="nav-text">Products</span></li>
+                <li data-view="inventory"><i class="fa-solid fa-warehouse"></i> <span class="nav-text">Inventory</span></li>
+                <li data-view="orders"><i class="fa-solid fa-receipt"></i> <span class="nav-text">Orders Logs</span></li>
+            </ul>
+            <div class="user-profile">
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                <div class="user-info nav-text">
+                    <div id="current-user-name">Admin</div>
+                    <div id="current-user-role" class="role-badge">Admin</div>
+                </div>
+                <button id="logout-btn" class="icon-btn" title="Logout"><i class="fa-solid fa-sign-out-alt"></i></button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- View: POS (Cashier) -->
+            <section id="view-pos" class="view-section active">
+                <div class="pos-layout">
+                    <!-- Products Grid -->
+                    <div class="products-area">
+                        <div class="top-bar glass-panel">
+                            <div class="search-box">
+                                <i class="fa-solid fa-search"></i>
+                                <input type="text" id="product-search" placeholder="Search product by name or barcode (Press Enter/Scanner)">
+                            </div>
+                            <div class="category-filters" id="category-filters">
+                                <button class="filter-btn active" data-category="all">All Items</button>
+                                <!-- Categories injected here -->
+                            </div>
+                        </div>
+                        <div class="products-grid scrollable" id="products-grid">
+                            <!-- Product Cards Injected Here -->
+                        </div>
+                    </div>
+
+                    <!-- Cart Sidebar -->
+                    <div class="cart-area glass-panel">
+                        <div class="cart-header">
+                            <h3>Current Order</h3>
+                            <button class="icon-btn text-danger" id="clear-cart-btn"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div class="cart-items scrollable" id="cart-items">
+                            <!-- Cart Items Injected Here -->
+                            <div class="empty-cart-msg"><i class="fa-solid fa-basket-shopping" style="font-size: 3rem; opacity: 0.2; display: block; margin-bottom: 1rem;"></i>Cart is empty.<br>Scan or click items to add.</div>
+                        </div>
+                        <div class="cart-summary">
+                            <div class="summary-row">
+                                <span>Subtotal</span>
+                                <span id="cart-subtotal">$0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Discount</span>
+                                <input type="number" id="cart-discount" value="0" min="0" step="0.5">
+                            </div>
+                            <div class="summary-row total">
+                                <span>Total</span>
+                                <span id="cart-total">$0.00</span>
+                            </div>
+                        </div>
+                        <button id="checkout-btn" class="btn btn-checkout w-100">Checkout <span class="shortcut-tip">(Ctrl+Enter)</span></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Dashboard -->
+            <section id="view-dashboard" class="view-section hidden">
+                <header class="page-header">
+                    <h2>Overview Dashboard</h2>
+                    <button class="btn btn-outline" id="refresh-dashboard"><i class="fa-solid fa-sync"></i> Refresh</button>
+                </header>
+                <div class="dashboard-grid">
+                    <div class="stat-card glass-panel">
+                        <div class="icon"><i class="fa-solid fa-sack-dollar"></i></div>
+                        <div class="details">
+                            <span class="label">Today's Revenue</span>
+                            <span class="value" id="dash-today-rev">$0.00</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="details">
+                            <span class="label">Monthly Revenue</span>
+                            <span class="value" id="dash-month-rev">$0.00</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="icon"><i class="fa-solid fa-receipt"></i></div>
+                        <div class="details">
+                            <span class="label">Today's Orders</span>
+                            <span class="value" id="dash-today-orders">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel warning">
+                        <div class="icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="details">
+                            <span class="label">Low Stock Items</span>
+                            <span class="value" id="dash-low-stock">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="charts-area">
+                    <div class="chart-container glass-panel">
+                        <h3>Top 5 Best Selling</h3>
+                        <ul id="top-products-list" class="top-list">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+                    <div class="chart-container glass-panel" style="flex:2">
+                        <h3>Low Stock Alerts</h3>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Current Stock</th>
+                                        <th>Min Required</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="low-stock-table">
+                                    <!-- Injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Products -->
+            <section id="view-products" class="view-section hidden">
+                <header class="page-header">
+                    <h2>Product Management</h2>
+                    <button class="btn btn-primary" id="add-product-btn"><i class="fa-solid fa-plus"></i> New Product</button>
+                </header>
+                <div class="glass-panel mt-3">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Barcode</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Cost</th>
+                                    <th>Stock</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table">
+                                <!-- Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Inventory -->
+            <section id="view-inventory" class="view-section hidden">
+                <header class="page-header">
+                    <h2>Inventory Management</h2>
+                    <button class="btn btn-primary" id="adjust-stock-btn"><i class="fa-solid fa-sliders"></i> Adjust Stock</button>
+                </header>
+                <div class="glass-panel mt-3">
+                    <h3>Recent Inventory Logs</h3>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Product</th>
+                                    <th>Type</th>
+                                    <th>Qty Change</th>
+                                    <th>Old Stock</th>
+                                    <th>New Stock</th>
+                                    <th>User</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-logs-table">
+                                <!-- Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Orders -->
+            <section id="view-orders" class="view-section hidden">
+                <header class="page-header">
+                    <h2>Order History</h2>
+                </header>
+                <div class="glass-panel mt-3">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Date</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Payment</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table">
+                                <!-- Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modals -->
+    
+    <!-- Add Product Modal -->
+    <div id="modal-product" class="modal-overlay">
+        <div class="modal-box glass-panel">
+            <div class="modal-header">
+                <h2>Add New Product</h2>
+                <button class="close-modal-product" style="background: none; border: none; font-size: 1.5rem; color: #0F172A; cursor: pointer;"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-product-form">
+                    <div class="input-group">
+                        <label>Name</label>
+                        <input type="text" id="prod-name" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Barcode</label>
+                        <input type="text" id="prod-barcode">
+                    </div>
+                    <div class="input-group">
+                        <label>Category</label>
+                        <select id="prod-category" class="w-100 p-2" style="background: rgba(0,0,0,0.1); color: #0F172A; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 1rem;">
+                            <!-- Injected -->
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Product Image</label>
+                        <input type="file" id="prod-image-file" accept="image/*" style="background: rgba(0,0,0,0.1); color: #0F172A; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; padding: 0.5rem; width: 100%;">
+                        <small style="opacity: 0.7;">Upload a photo from your computer</small>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="input-group" style="flex: 1; margin: 0;">
+                            <label>Price</label>
+                            <input type="number" id="prod-price" step="0.01" required>
+                        </div>
+                        <div class="input-group" style="flex: 1; margin: 0;">
+                            <label>Cost</label>
+                            <input type="number" id="prod-cost" step="0.01">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="input-group" style="flex: 1; margin: 0;">
+                            <label>Stock</label>
+                            <input type="number" id="prod-stock" value="0">
+                        </div>
+                        <div class="input-group" style="flex: 1; margin: 0;">
+                            <label>Min Stock</label>
+                            <input type="number" id="prod-min-stock" value="10">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="prod-save-btn" class="btn btn-primary w-100">Save Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adjust Stock Modal -->
+    <div id="modal-adjust-stock" class="modal-overlay">
+        <div class="modal-box glass-panel">
+            <div class="modal-header">
+                <h2>Adjust Stock</h2>
+                <button class="close-modal-adjust" style="background: none; border: none; font-size: 1.5rem; color: #0F172A; cursor: pointer;"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="adjust-stock-form">
+                    <div class="input-group">
+                        <label>Product</label>
+                        <select id="adj-product" class="w-100 p-2" style="background: rgba(0,0,0,0.1); color: #0F172A; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 1rem;" required>
+                            <!-- Injected -->
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Type</label>
+                        <select id="adj-type" class="w-100 p-2" style="background: rgba(0,0,0,0.1); color: #0F172A; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 1rem;">
+                            <option value="in" style="color: black;">Stock In</option>
+                            <option value="out" style="color: black;">Stock Out</option>
+                            <option value="adjustment" style="color: black;">Absolute Adjust</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Quantity</label>
+                        <input type="number" id="adj-qty" min="1" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Reason</label>
+                        <input type="text" id="adj-reason">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="adj-save-btn" class="btn btn-primary w-100">Confirm Adjustment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="modal-checkout" class="modal-overlay">
+        <div class="modal-box glass-panel">
+            <div class="modal-header">
+                <h2>Complete Checkout</h2>
+                <button class="close-modal"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="checkout-summary">
+                    <div class="huge-total" id="co-total">$0.00</div>
+                </div>
+                <div class="payment-methods mt-3 mb-3">
+                    <label class="pm-btn active"><input type="radio" name="payment" value="cash" checked> <i class="fa-solid fa-money-bill"></i> Cash</label>
+                    <label class="pm-btn"><input type="radio" name="payment" value="card"> <i class="fa-solid fa-credit-card"></i> Card</label>
+                    <label class="pm-btn"><input type="radio" name="payment" value="qr"> <i class="fa-solid fa-qrcode"></i> QR</label>
+                </div>
+                <div id="qr-payment-container" class="hidden text-center mt-3 mb-3">
+                    <img src="pos-qr.png" alt="Payment QR Code" style="max-width: 200px; border-radius: 10px; margin: 0 auto; display: block; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                    <p class="mt-2" style="font-weight: 600; font-size: 1.1rem;">Scan to pay: <strong id="co-qr-amount" class="text-success">$0.00</strong></p>
+                    <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 10px;">(Please save your QR image as pos-qr.png in the frontend folder)</p>
+                </div>
+
+                <div class="input-group" id="co-received-group">
+                    <label>Amount Received</label>
+                    <input type="number" id="co-amount-paid" class="huge-input" value="0.00" step="0.01">
+                </div>
+                <div class="numpad" id="co-numpad">
+                    <button class="num-btn">1</button><button class="num-btn">2</button><button class="num-btn">3</button>
+                    <button class="num-btn">4</button><button class="num-btn">5</button><button class="num-btn">6</button>
+                    <button class="num-btn">7</button><button class="num-btn">8</button><button class="num-btn">9</button>
+                    <button class="num-btn btn-danger" id="num-clear">C</button><button class="num-btn">0</button><button class="num-btn" id="num-exact">Exact</button>
+                    <button class="num-btn" data-val="10">+10</button><button class="num-btn" data-val="20">+20</button><button class="num-btn" data-val="50">+50</button>
+                </div>
+                <div class="change-display mt-3">
+                    <span>Change:</span>
+                    <span id="co-change" class="text-success">$0.00</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="co-confirm-btn" class="btn btn-primary w-100">Confirm Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Slip for Printing -->
+    <div id="receipt-slip" class="receipt-slip hidden"></div>
+
+    <!-- Script -->
+    <script src="app.js"></script>
+</body>
+</html>
